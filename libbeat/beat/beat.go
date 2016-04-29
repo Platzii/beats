@@ -121,8 +121,8 @@ type BeatConfig struct {
 // Run initializes and runs a Beater implementation. name is the name of the
 // Beat (e.g. packetbeat or topbeat). version is version number of the Beater
 // implementation. bt is Beater implementation to run.
-func Run(name, version string, bt Beater) error {
-	return newInstance(name, version, bt).launch()
+func Run(name, version string, cf string, bt Beater) error {
+	return newInstance(name, version, bt).launch(cf)
 }
 
 // instance contains everything related to a single instance of a beat.
@@ -195,9 +195,9 @@ func (bc *instance) handleFlags() error {
 // config reads the configuration file from disk, parses the common options
 // defined in BeatConfig, initializes logging, and set GOMAXPROCS if defined
 // in the config. Lastly it invokes the Config method implemented by the beat.
-func (bc *instance) config() error {
+func (bc *instance) config(cf string) error {
 	var err error
-	bc.data.RawConfig, err = cfgfile.Load("")
+	bc.data.RawConfig, err = cfgfile.Load(cf)
 	if err != nil {
 		return fmt.Errorf("error loading config file: %v", err)
 	}
@@ -285,7 +285,7 @@ func (bc *instance) cleanup() error {
 // launch manages the lifecycle of the beat and guarantees the order in which
 // the Beater methods are invoked. If an error occurs in the lifecycle of the
 // Beat it will be returned.
-func (bc *instance) launch() (err error) {
+func (bc *instance) launch(cf string) (err error) {
 	defer func() { err = handleError(err) }()
 
 	err = bc.handleFlags()
@@ -293,7 +293,7 @@ func (bc *instance) launch() (err error) {
 		return
 	}
 
-	err = bc.config()
+	err = bc.config(cf)
 	if err != nil {
 		return
 	}
